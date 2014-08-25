@@ -1,0 +1,5 @@
+[package]
+
+name = "SmallVCM-rs"
+version = "0.0.1"
+authors = ["Yuri Kunde Schlesner <yuriks@yuriks.net>"]
