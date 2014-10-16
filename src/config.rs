@@ -3,6 +3,7 @@ use math::vec2;
 use std::default::Default;
 use scene;
 use scene::BoxMask;
+use renderer::AbstractRenderer;
 
 enum Algorithm {
     EyeLight,
@@ -94,7 +95,14 @@ impl Default for Config {
     }
 }
 
-// TODO CreateRenderer
+fn create_render(config: &Config, seed: u32) -> Box<AbstractRenderer> {
+    let ref scene = config.scene;
+
+    match config.algorithm {
+        // TODO
+        _ => unimplemented!()
+    }
+}
 
 fn get_scene_config(scene_id: uint) -> Option<BoxMask> {
     match scene_id {

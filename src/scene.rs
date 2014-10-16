@@ -1,3 +1,5 @@
+use std::collections::SmallIntMap;
+
 bitflags! {
     flags BoxMask: u32 {
         const LIGHT_CEILING    = 1,
@@ -16,4 +18,17 @@ bitflags! {
         const BOTH_LARGE_SPHERES = LARGE_MIRROR_SPHERE.bits | LARGE_GLASS_SPHERE.bits,
         const DEFAULT            = LIGHT_CEILING.bits | BOTH_SMALL_SPHERES.bits,
     }
+}
+
+pub struct Scene {
+    geometry: (), // TODO
+    camera: (), // TODO
+    materials: Vec<()>, // TODO
+    lights: Vec<()>, // TODO
+    material_to_light: SmallIntMap<uint>,
+    scene_sphere: (), // TODO
+    background: (), // TODO
+
+    scene_name: String,
+    scene_acronym: String,
 }

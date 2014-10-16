@@ -10,9 +10,12 @@ use std::os::set_exit_status;
 use config::Config;
 
 mod config;
+mod framebuffer;
 mod math;
+mod renderer;
 mod rng;
 mod scene;
+mod utils;
 
 fn full_report(_a_config: &Config) {
     // TODO

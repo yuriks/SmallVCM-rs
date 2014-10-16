@@ -70,10 +70,10 @@ macro_rules! impl_Vector_traits(
     )
 )
 
-#[deriving(Copy)]
-pub struct Vector2<T> { x: T, y: T }
-#[deriving(Copy)]
-struct Vector3<T> { x: T, y: T, z: T }
+#[deriving(Copy, Clone)]
+pub struct Vector2<T> { pub x: T, pub y: T }
+#[deriving(Copy, Clone)]
+struct Vector3<T> { pub x: T, pub y: T, pub z: T }
 
 impl_Vector_traits!(Vector2 { x, y })
 impl_Vector_traits!(Vector3 { x, y, z })
