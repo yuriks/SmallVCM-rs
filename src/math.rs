@@ -1,7 +1,7 @@
 use std::num::Zero;
 
-pub static pi : f32 = 3.14159265358979;
-pub static inv_pi : f32 = 1.0 / pi;
+pub const PI : f32 = 3.14159265358979;
+pub const INV_PI : f32 = 1.0 / PI;
 
 pub fn sqr<T: Mul<T, T>>(a: T) -> T {
     a * a
@@ -259,7 +259,7 @@ impl Mat4f {
     fn perspective(fov: f32, near: f32, far: f32) -> Mat4f {
         // Camera points towards -z. 0 < near < far.
         // Matrix maps z range [-near, -far] to [-1, 1], after homogeneous division
-        let f = 1.0 / (fov * pi / 360.0).tan();
+        let f = 1.0 / (fov * PI / 360.0).tan();
         let d = 1.0 / (near - far);
 
         Mat4f { data: [
