@@ -1,30 +1,67 @@
 use math::Vec2i;
 use math::vec2;
 use std::default::Default;
+use scene;
+use scene::BoxMask;
 
 enum Algorithm {
-    EyeLight
+    EyeLight,
+    PathTracing,
+    LightTracing,
+    ProgressivePhotonMapping,
+    BidirectionalPhotonMapping,
+    BidirectionalPathTracing,
+    VertexConnectionMerging,
 }
 
 impl Algorithm {
     fn get_name(self) -> &'static str {
         match self {
             EyeLight => "eye light",
+            PathTracing => "path tracing",
+            LightTracing => "light tracing",
+            ProgressivePhotonMapping => "progressive photon mapping",
+            BidirectionalPhotonMapping => "bidirectional photon mapping",
+            BidirectionalPathTracing => "bidirectional path tracing",
+            VertexConnectionMerging => "vertex connection and merging",
         }
     }
 
     fn get_acronym(self) -> &'static str {
         match self {
             EyeLight => "el",
+            PathTracing => "pt",
+            LightTracing => "lt",
+            ProgressivePhotonMapping => "ppm",
+            BidirectionalPhotonMapping => "bpm",
+            BidirectionalPathTracing => "bpt",
+            VertexConnectionMerging => "vcm",
         }
+    }
+
+    fn from_acronym(s: &str) -> Option<Algorithm> {
+        Some(match s {
+            "el" => EyeLight,
+            "pt" => PathTracing,
+            "lt" => LightTracing,
+            "ppm" => ProgressivePhotonMapping,
+            "bpm" => BidirectionalPhotonMapping,
+            "bpt" => BidirectionalPathTracing,
+            "vcm" => VertexConnectionMerging,
+            _ => return None,
+        })
     }
 }
 
+enum RunLimit {
+    LimitIterations(u32),
+    LimitTime(f32),
+}
+
 pub struct Config {
-    scene: (), // TODO
+    pub scene: Option<()>, // TODO
     algorithm: Algorithm,
-    iterations: u32,
-    max_time: f32,
+    run_limit: RunLimit,
     radius_factor: f32,
     radius_alpha: f32,
     framebuffer: (), // TODO
@@ -34,16 +71,15 @@ pub struct Config {
     min_path_length: uint,
     output_name: String,
     resolution: Vec2i,
-    full_report: bool,
+    pub full_report: bool,
 }
 
 impl Default for Config {
     fn default() -> Config {
         Config {
-            scene: (), // TODO
-            algorithm: EyeLight, // TODO
-            iterations: 1,
-            max_time: -1.0,
+            scene: None,
+            algorithm: VertexConnectionMerging,
+            run_limit: LimitIterations(1),
             radius_factor: 0.003,
             radius_alpha: 0.75,
             framebuffer: (), // TODO
@@ -56,4 +92,121 @@ impl Default for Config {
             full_report: false,
         }
     }
+}
+
+// TODO CreateRenderer
+
+fn get_scene_config(scene_id: uint) -> Option<BoxMask> {
+    match scene_id {
+        1 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_SUN),
+        2 => Some(scene::GLOSSY_FLOOR | scene::LARGE_MIRROR_SPHERE | scene::LIGHT_CEILING),
+        3 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_POINT),
+        4 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_BACKGROUND),
+        _ => None
+    }
+}
+
+fn default_filename(scene_config: BoxMask, scene: &() /*TODO*/, algorithm: Algorithm) -> String {
+    let mut filename = String::new();
+
+    if scene_config.contains(scene::GLOSSY_FLOOR) {
+        filename.push_str("g");
+    }
+
+    filename.push_str("_");
+    filename.push_str(algorithm.get_acronym());
+
+    filename.push_str(".bmp");
+
+    filename
+}
+
+fn print_help(_argv: &[String]) {
+    // TODO
+}
+
+fn parse_commandline(argv: &[String]) -> Result<Config, String> {
+    use getopts::{getopts, optflag, optopt};
+
+    let mut config : Config = Default::default();
+
+    let opts = [
+        optflag("h", "help", "Displays usage information."),
+        optflag("", "report", "Renders all scenes using all algorithms and generates an index.html file."),
+        optopt("s", "", "Selects the scene.", "sceneID"),
+        optopt("a", "", "Selects the rendering algorithm.", "algorithm"),
+        optopt("i", "", "Number of iterations to run the algorithm for.", "iterations"),
+        optopt("t", "", "Number of seconds to run the algorithm for.", "seconds"),
+        optopt("o", "", "User specified output name, with extension .bmp or .hdr.", "output_name"),
+    ];
+    let matches = getopts(argv, opts).unwrap();
+
+    if matches.opt_present("h") {
+        print_help(argv);
+        return Err("".to_string());
+    }
+
+    if matches.opt_present("report") {
+        config.full_report = true;
+        // In report mode, the scene and algorithm options are ignored and managed by the reporter.
+        return Ok(config);
+    }
+
+    let scene_config = match matches.opt_str("s") {
+        Some(scene_num_str) =>
+            match from_str::<uint>(scene_num_str.as_slice())
+                    .and_then(|id| get_scene_config(id)) {
+                Some(scene_config) => scene_config,
+                _ => return Err(
+                    format!("Invalid scene id \"{}\", please see help (-h).", scene_num_str)),
+            },
+        None => get_scene_config(0).unwrap(),
+    };
+
+    match matches.opt_str("a") {
+        Some(algorithm_str) => match Algorithm::from_acronym(algorithm_str.as_slice()) {
+            Some(algorithm) => config.algorithm = algorithm,
+            _ => return Err(
+                format!("Invalid algorithm \"{}\", please see help (-h).", algorithm_str)),
+        },
+        None => (),
+    }
+
+    match matches.opt_str("i") {
+        Some(iterations_str) => match from_str::<u32>(iterations_str.as_slice()) {
+            Some(iterations) if iterations >= 1 => config.run_limit = LimitIterations(iterations),
+            _ => return Err(format!(
+                "Invalid iteration count \"{}\", please see help (-h).", iterations_str)),
+        },
+        None => (),
+    }
+
+    match matches.opt_str("t") {
+        Some(time_str) => match from_str::<f32>(time_str.as_slice()) {
+            Some(time) if time >= 0.0 => config.run_limit = LimitTime(time),
+            _ => return Err(format!(
+                "Invalid time \"{}\", please see help (-h).", time_str)),
+        },
+        None => (),
+    }
+
+    config.output_name = match matches.opt_str("o") {
+        Some(output_name) => if output_name.len() > 0 {
+            output_name
+        } else {
+            return Err(format!(
+                    "Invalid output name \"{}\", please see help (-h).", output_name));
+        },
+        // Generate a default output name if none was specified
+        None => default_filename(scene_config, &config.scene.unwrap(), config.algorithm),
+    };
+
+    // Add a default extension if none's present
+    if !config.output_name.as_slice().ends_with(".bmp") &&
+       !config.output_name.as_slice().ends_with(".hdr")
+    {
+        config.output_name.push_str(".bmp");
+    }
+
+    Ok(config)
 }
