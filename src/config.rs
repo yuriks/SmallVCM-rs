@@ -154,7 +154,7 @@ fn parse_commandline(argv: &[String]) -> Result<Config, String> {
 
     let scene_config = match matches.opt_str("s") {
         Some(scene_num_str) =>
-            match from_str::<uint>(scene_num_str.as_slice())
+            match from_str::<uint>(scene_num_str[])
                     .and_then(|id| get_scene_config(id)) {
                 Some(scene_config) => scene_config,
                 _ => return Err(
@@ -164,7 +164,7 @@ fn parse_commandline(argv: &[String]) -> Result<Config, String> {
     };
 
     match matches.opt_str("a") {
-        Some(algorithm_str) => match Algorithm::from_acronym(algorithm_str.as_slice()) {
+        Some(algorithm_str) => match Algorithm::from_acronym(algorithm_str[]) {
             Some(algorithm) => config.algorithm = algorithm,
             _ => return Err(
                 format!("Invalid algorithm \"{}\", please see help (-h).", algorithm_str)),
@@ -173,7 +173,7 @@ fn parse_commandline(argv: &[String]) -> Result<Config, String> {
     }
 
     match matches.opt_str("i") {
-        Some(iterations_str) => match from_str::<u32>(iterations_str.as_slice()) {
+        Some(iterations_str) => match from_str::<u32>(iterations_str[]) {
             Some(iterations) if iterations >= 1 => config.run_limit = LimitIterations(iterations),
             _ => return Err(format!(
                 "Invalid iteration count \"{}\", please see help (-h).", iterations_str)),
@@ -182,7 +182,7 @@ fn parse_commandline(argv: &[String]) -> Result<Config, String> {
     }
 
     match matches.opt_str("t") {
-        Some(time_str) => match from_str::<f32>(time_str.as_slice()) {
+        Some(time_str) => match from_str::<f32>(time_str[]) {
             Some(time) if time >= 0.0 => config.run_limit = LimitTime(time),
             _ => return Err(format!(
                 "Invalid time \"{}\", please see help (-h).", time_str)),
@@ -202,8 +202,8 @@ fn parse_commandline(argv: &[String]) -> Result<Config, String> {
     };
 
     // Add a default extension if none's present
-    if !config.output_name.as_slice().ends_with(".bmp") &&
-       !config.output_name.as_slice().ends_with(".hdr")
+    if !config.output_name[].ends_with(".bmp") &&
+       !config.output_name[].ends_with(".hdr")
     {
         config.output_name.push_str(".bmp");
     }

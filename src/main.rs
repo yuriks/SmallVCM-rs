@@ -1,5 +1,6 @@
 #![feature(macro_rules)]
 #![feature(trace_macros)]
+#![feature(slicing_syntax)]
 #![allow(dead_code)]
 
 extern crate getopts;
