@@ -10,8 +10,13 @@ use std::io::stdio;
 
 mod camera;
 mod config;
+mod frame;
 mod framebuffer;
+mod geometry;
+mod lights;
+mod materials;
 mod math;
+mod ray;
 mod renderer;
 mod rng;
 mod scene;

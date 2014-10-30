@@ -132,7 +132,7 @@ impl<T: Num + PartialOrd + Copy> Vector3<T> {
 
 impl<T: Float> Vector3<T> {
     #[inline]
-    fn length(&self) -> T {
+    pub fn length(&self) -> T {
         self.length_sqr().sqrt()
     }
 
