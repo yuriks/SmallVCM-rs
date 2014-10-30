@@ -1,8 +1,9 @@
 use std::collections::SmallIntMap;
-use math::{Vec2i, vec2, vec3, vec3s};
+use math::{Vec2i, vec2, vec3, vec3s, INV_PI};
 use camera::Camera;
 use materials::Material;
 use geometry::{GeometryList, Triangle, Sphere};
+use lights::{AbstractLight, AreaLight, DirectionalLight, PointLight, BackgroundLight};
 
 bitflags! {
     flags BoxMask: u32 {
@@ -28,10 +29,10 @@ pub struct Scene {
     geometry: GeometryList,
     camera: Camera,
     materials: Vec<Material>,
-    lights: Vec<()>, // TODO
+    lights: Vec<Box<AbstractLight + 'static>>,
     material_to_light: SmallIntMap<uint>,
     scene_sphere: (), // TODO
-    background: (), // TODO
+    background: Option<uint>,
 
     pub scene_name: String,
     pub scene_acronym: String,
@@ -165,7 +166,7 @@ impl Scene {
         }
 
         if box_mask.contains(SMALL_GLASS_SPHERE) {
-            geometry_list.geometry.push(box Sphere::new(left_ball_center, small_radius, 7));
+            geometry_list.geometry.push(box Sphere::new(right_ball_center, small_radius, 7));
         }
 
         // Light box at the ceiling
@@ -200,6 +201,51 @@ impl Scene {
             geometry_list.geometry.push(box Triangle::new(lb[5], lb[0], lb[1], mat_b));
         }
 
+        // Lights
+        let mut lights : Vec<Box<AbstractLight + 'static>> = Vec::new();
+        let mut material_to_light = SmallIntMap::new();
+        if light_ceiling && !light_box {
+            let mut l = box AreaLight::new(cb[2], cb[6], cb[7]);
+            l.intensity = vec3s(0.95492965);
+            lights.push(l);
+            material_to_light.insert(0, 0);
+
+            let mut l = box AreaLight::new(cb[7], cb[3], cb[2]);
+            l.intensity = vec3s(0.95492965);
+            lights.push(l);
+            material_to_light.insert(1, 1);
+        } else if light_ceiling && light_box {
+            let mut l = box AreaLight::new(cb[0], cb[5], cb[4]);
+            l.intensity = vec3s(25.03329895614464);
+            lights.push(l);
+            material_to_light.insert(0, 0);
+
+            let mut l = box AreaLight::new(cb[5], cb[0], cb[1]);
+            l.intensity = vec3s(25.03329895614464);
+            lights.push(l);
+            material_to_light.insert(1, 1);
+        }
+
+        if light_sun {
+            let mut l = box DirectionalLight::new(vec3(-1.0, 1.5, -1.0));
+            l.intensity = vec3(0.5, 0.2, 0.0) * vec3s(20.0);
+            lights.push(l);
+        }
+
+        if light_point {
+            let mut l = box PointLight::new(vec3(0.0, -0.5, 1.0));
+            l.intensity = vec3s(70.0 * (INV_PI * 0.25));
+            lights.push(l);
+        }
+
+        let mut background_light = None;
+        if light_background {
+            let mut l = box BackgroundLight::new();
+            l.scale = 1.0;
+            background_light = Some(lights.len());
+            lights.push(l);
+        }
+
         // TODO
         Scene {
             geometry: geometry_list,
@@ -209,16 +255,16 @@ impl Scene {
                 vec3( 3.73896e-4, 0.0542148, 0.998529),
                 vec2(resolution.x as f32, resolution.y as f32), 45.0),
             materials: materials,
-            lights: Vec::new(),
-            material_to_light: SmallIntMap::new(),
+            lights: lights,
+            material_to_light: material_to_light,
             scene_sphere: (),
-            background: (),
+            background: background_light,
             scene_name: name,
             scene_acronym: acronym,
         }
     }
 
-    fn get_scene_name(box_mask: BoxMask) -> (String, String) {
+    fn get_scene_name(_box_mask: BoxMask) -> (String, String) {
         let mut name = String::new();
         let mut acronym = String::new();
 

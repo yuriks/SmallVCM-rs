@@ -1,22 +1,22 @@
 use math::{Vec3f, vec3, vec3s};
 use frame::Frame;
 
-struct SceneSphere {
+pub struct SceneSphere {
     scene_center: Vec3f,
     scene_radius: f32,
     inv_scene_radius_sqr: f32,
 }
 
-trait AbstractLight {
+pub trait AbstractLight {
     // TODO
 }
 
-struct AreaLight {
+pub struct AreaLight {
     p0: Vec3f,
     e1: Vec3f,
     e2: Vec3f,
     frame: Frame,
-    intensity: Vec3f,
+    pub intensity: Vec3f,
     inv_area: f32,
 }
 
@@ -37,9 +37,13 @@ impl AreaLight {
     }
 }
 
-struct DirectionalLight {
+impl AbstractLight for AreaLight {
+    // TODO
+}
+
+pub struct DirectionalLight {
     frame: Frame,
-    intensity: Vec3f,
+    pub intensity: Vec3f,
 }
 
 impl DirectionalLight {
@@ -51,9 +55,13 @@ impl DirectionalLight {
     }
 }
 
-struct PointLight {
+impl AbstractLight for DirectionalLight {
+    // TODO
+}
+
+pub struct PointLight {
     position: Vec3f,
-    intensity: Vec3f,
+    pub intensity: Vec3f,
 }
 
 impl PointLight {
@@ -65,9 +73,13 @@ impl PointLight {
     }
 }
 
-struct BackgroundLight {
+impl AbstractLight for PointLight {
+    // TODO
+}
+
+pub struct BackgroundLight {
     background_color: Vec3f,
-    scale: f32,
+    pub scale: f32,
 }
 
 impl BackgroundLight {
@@ -77,4 +89,8 @@ impl BackgroundLight {
             scale: 1.0,
         }
     }
+}
+
+impl AbstractLight for BackgroundLight {
+    // TODO
 }
