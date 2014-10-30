@@ -7,43 +7,25 @@ pub fn sqr<T: Mul<T, T>>(a: T) -> T {
     a * a
 }
 
+macro_rules! impl_Vector_op(
+    ($Trait:ident for $Self:ident { $($field:ident),+ }, $func:ident) => (
+        impl<T: Num> $Trait<$Self<T>, $Self<T>> for $Self<T> {
+            #[inline]
+            fn $func(&self, o: &$Self<T>) -> $Self<T> {
+                $Self {
+                    $($field: self.$field.$func(&o.$field)),+
+                }
+            }
+        }
+    )
+)
+
 macro_rules! impl_Vector_traits(
     ($Self:ident { $($field:ident),+ }) => (
-        impl<T: Num> Add<$Self<T>, $Self<T>> for $Self<T> {
-            #[inline]
-            fn add(&self, o: &$Self<T>) -> $Self<T> {
-                $Self {
-                    $($field: self.$field + o.$field),+
-                }
-            }
-        }
-
-        impl<T: Num> Sub<$Self<T>, $Self<T>> for $Self<T> {
-            #[inline]
-            fn sub(&self, o: &$Self<T>) -> $Self<T> {
-                $Self {
-                    $($field: self.$field - o.$field),+
-                }
-            }
-        }
-
-        impl<T: Num> Mul<$Self<T>, $Self<T>> for $Self<T> {
-            #[inline]
-            fn mul(&self, o: &$Self<T>) -> $Self<T> {
-                $Self {
-                    $($field: self.$field * o.$field),+
-                }
-            }
-        }
-
-        impl<T: Num> Div<$Self<T>, $Self<T>> for $Self<T> {
-            #[inline]
-            fn div(&self, o: &$Self<T>) -> $Self<T> {
-                $Self {
-                    $($field: self.$field / o.$field),+
-                }
-            }
-        }
+        impl_Vector_op!(Add for $Self { $($field),+ }, add)
+        impl_Vector_op!(Sub for $Self { $($field),+ }, sub)
+        impl_Vector_op!(Mul for $Self { $($field),+ }, mul)
+        impl_Vector_op!(Div for $Self { $($field),+ }, div)
 
         impl<T: Num> Neg<$Self<T>> for $Self<T> {
             #[inline]
