@@ -2,8 +2,9 @@ use math::Vec2i;
 use math::vec2;
 use std::default::Default;
 use scene;
-use scene::BoxMask;
+use scene::{BoxMask, Scene};
 use renderer::AbstractRenderer;
+use framebuffer::Framebuffer;
 
 enum Algorithm {
     EyeLight,
@@ -16,7 +17,7 @@ enum Algorithm {
 }
 
 impl Algorithm {
-    fn get_name(self) -> &'static str {
+    pub fn get_name(self) -> &'static str {
         match self {
             EyeLight => "eye light",
             PathTracing => "path tracing",
@@ -54,23 +55,23 @@ impl Algorithm {
     }
 }
 
-enum RunLimit {
+pub enum RunLimit {
     LimitIterations(u32),
     LimitTime(f32),
 }
 
 pub struct Config {
-    pub scene: Option<()>, // TODO
-    algorithm: Algorithm,
-    run_limit: RunLimit,
+    pub scene: Option<Scene>,
+    pub algorithm: Algorithm,
+    pub run_limit: RunLimit,
     radius_factor: f32,
     radius_alpha: f32,
-    framebuffer: (), // TODO
+    pub framebuffer: Framebuffer,
     pub num_threads: u32,
     base_seed: u32,
     max_path_length: uint,
     min_path_length: uint,
-    output_name: String,
+    pub output_name: String,
     resolution: Vec2i,
     pub full_report: bool,
 }
@@ -83,7 +84,7 @@ impl Default for Config {
             run_limit: LimitIterations(1),
             radius_factor: 0.003,
             radius_alpha: 0.75,
-            framebuffer: (), // TODO
+            framebuffer: Framebuffer::new(),
             num_threads: 0,
             base_seed: 1234,
             max_path_length: 10,
@@ -95,8 +96,8 @@ impl Default for Config {
     }
 }
 
-fn create_render(config: &Config, seed: u32) -> Box<AbstractRenderer> {
-    let ref scene = config.scene;
+fn create_render(config: &Config, _seed: u32) -> Box<AbstractRenderer> {
+    let ref _scene = config.scene;
 
     match config.algorithm {
         // TODO
@@ -114,12 +115,14 @@ fn get_scene_config(scene_id: uint) -> Option<BoxMask> {
     }
 }
 
-fn default_filename(scene_config: BoxMask, scene: &() /*TODO*/, algorithm: Algorithm) -> String {
+fn default_filename(scene_config: BoxMask, scene: &Scene, algorithm: Algorithm) -> String {
     let mut filename = String::new();
 
     if scene_config.contains(scene::GLOSSY_FLOOR) {
         filename.push_str("g");
     }
+
+    filename.push_str(scene.scene_acronym[]);
 
     filename.push_str("_");
     filename.push_str(algorithm.get_acronym());
@@ -133,7 +136,7 @@ fn print_help(_argv: &[String]) {
     // TODO
 }
 
-fn parse_commandline(argv: &[String]) -> Result<Config, String> {
+pub fn parse_commandline(argv: &[String]) -> Result<Config, String> {
     use getopts::{getopts, optflag, optopt};
 
     let mut config : Config = Default::default();
@@ -206,7 +209,7 @@ fn parse_commandline(argv: &[String]) -> Result<Config, String> {
                     "Invalid output name \"{}\", please see help (-h).", output_name));
         },
         // Generate a default output name if none was specified
-        None => default_filename(scene_config, &config.scene.unwrap(), config.algorithm),
+        None => default_filename(scene_config, config.scene.as_ref().unwrap(), config.algorithm),
     };
 
     // Add a default extension if none's present

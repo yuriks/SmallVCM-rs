@@ -1,14 +1,14 @@
 #![feature(macro_rules)]
-#![feature(trace_macros)]
 #![feature(slicing_syntax)]
 #![allow(dead_code)]
 
 extern crate getopts;
 
-use std::default::Default;
 use std::os::set_exit_status;
-use config::Config;
+use config::{Config, LimitTime, LimitIterations};
+use std::io::stdio;
 
+mod camera;
 mod config;
 mod framebuffer;
 mod math;
@@ -17,14 +17,25 @@ mod rng;
 mod scene;
 mod utils;
 
-fn full_report(_a_config: &Config) {
-    // TODO
+fn render(_config: &Config) -> (f32, int) {
+    unimplemented!() // TODO
+}
+
+fn full_report(_config: &Config) {
+    unimplemented!() // TODO
 }
 
 fn main() {
     // Setups config based on command line
-    let mut config : Config = Default::default();
-    // TODO config::ParseCommandline(argc, argv, &mut config);
+    let mut config = match config::parse_commandline(std::os::args()[]) {
+        Ok(config) => config,
+        Err(ref s) if s[] == "" => return,
+        Err(ref s) => {
+            stdio::println(s[]);
+            set_exit_status(1);
+            return;
+        },
+    };
 
     if config.num_threads <= 0 {
         config.num_threads = 1;
@@ -37,10 +48,34 @@ fn main() {
         return;
     }
 
-    if config.scene == None {
+    if config.scene.is_none() {
         set_exit_status(1);
         return;
     }
 
-    // TODO
+    println!("Scene:   {}\n", config.scene.as_ref().unwrap().scene_name);
+    match config.run_limit {
+        LimitTime(t) => println!("Target:  {} seconds render time", t),
+        LimitIterations(n) => println!("Target:  {} iteration(s)", n),
+    }
+
+    print!("Running: {}... ", config.algorithm.get_name());
+    stdio::flush();
+    let (time, _) = render(&config);
+    println!("done in {:.2} s", time);
+
+    let extension = config.output_name[].rsplitn(1, '.').next();
+
+    match extension {
+        Some("bmp") => config.framebuffer.save_bmp(config.output_name[], 2.2),
+        Some("hdr") => config.framebuffer.save_hdr(config.output_name[]),
+        Some(other_ext) => {
+            println!("Used unknown extension {}", other_ext);
+            set_exit_status(1);
+        }
+        None => {
+            println!("Output filename has no extension!");
+            set_exit_status(1);
+        }
+    }
 }

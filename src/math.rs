@@ -82,7 +82,7 @@ impl<T: Num + Copy> Vector2<T> {
     }
 
     #[inline]
-    fn dot(&self, o: &Vector2<T>) -> T {
+    pub fn dot(&self, o: Vector2<T>) -> T {
         (self.x * o.x) + (self.y * o.y)
     }
 }
@@ -111,17 +111,17 @@ impl<T: Num + PartialOrd + Copy> Vector3<T> {
     }
 
     #[inline]
-    fn dot(&self, o: &Vector3<T>) -> T {
+    pub fn dot(&self, o: Vector3<T>) -> T {
         (self.x * o.x) + (self.y * o.y)
     }
 
     #[inline]
-    fn length_sqr(&self) -> T {
+    fn length_sqr(self) -> T {
         self.dot(self)
     }
 
     #[inline]
-    fn cross(&self, o: &Vector3<T>) -> Vector3<T> {
+    pub fn cross(&self, o: Vector3<T>) -> Vector3<T> {
         Vector3 {
             x: self.y * o.z - self.z * o.y,
             y: self.z * o.x - self.x * o.z,
@@ -137,7 +137,7 @@ impl<T: Float> Vector3<T> {
     }
 
     #[inline]
-    fn normalized(&self) -> Vector3<T> {
+    pub fn normalized(&self) -> Vector3<T> {
         self / Vector3::spread(self.length())
     }
 }
@@ -174,7 +174,7 @@ impl Mat4f {
     }
 
     #[inline]
-    fn set_row_vec3(&mut self, row: uint, xyz: &Vec3f, w: f32) {
+    pub fn set_row_vec3(&mut self, row: uint, xyz: Vec3f, w: f32) {
         self.data[row] = [xyz.x, xyz.y, xyz.z, w];
     }
 
@@ -213,7 +213,7 @@ impl Mat4f {
     }
 
     #[inline]
-    fn identity() -> Mat4f {
+    pub fn identity() -> Mat4f {
         let mut res = Mat4f::zero();
         for i in range(0, 4) {
             res[(i, i)] = 1.0;
@@ -221,7 +221,7 @@ impl Mat4f {
         res
     }
 
-    fn scale(scale: &Vec3f) -> Mat4f {
+    pub fn scale(scale: &Vec3f) -> Mat4f {
         let mut res = Mat4f::identity();
         for i in range(0, 3) {
             res[(i, i)] = scale[i];
@@ -230,7 +230,7 @@ impl Mat4f {
         res
     }
 
-    fn translate(translation: &Vec3f) -> Mat4f {
+    pub fn translate(translation: &Vec3f) -> Mat4f {
         let mut res = Mat4f::identity();
         for i in range(0, 3) {
             res[(i, 3)] = translation[i];
@@ -238,7 +238,7 @@ impl Mat4f {
         res
     }
 
-    fn perspective(fov: f32, near: f32, far: f32) -> Mat4f {
+    pub fn perspective(fov: f32, near: f32, far: f32) -> Mat4f {
         // Camera points towards -z. 0 < near < far.
         // Matrix maps z range [-near, -far] to [-1, 1], after homogeneous division
         let f = 1.0 / (fov * PI / 360.0).tan();
@@ -252,7 +252,7 @@ impl Mat4f {
         ]}
     }
 
-    fn inverted(&self) -> Mat4f {
+    pub fn inverted(&self) -> Mat4f {
         let mut inv = Mat4f::zero();
 
         inv[(0,0)] =  self[(1,1)] * self[(2,2)] * self[(3,3)] -
