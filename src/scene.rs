@@ -1,4 +1,4 @@
-use std::collections::SmallIntMap;
+use std::collections::VecMap;
 use math::{Vec2i, vec2, vec3, vec3s, INV_PI};
 use camera::Camera;
 use materials::Material;
@@ -30,7 +30,7 @@ pub struct Scene {
     camera: Camera,
     materials: Vec<Material>,
     lights: Vec<Box<AbstractLight + 'static>>,
-    material_to_light: SmallIntMap<uint>,
+    material_to_light: VecMap<uint>,
     scene_sphere: (), // TODO
     background: Option<uint>,
 
@@ -203,7 +203,7 @@ impl Scene {
 
         // Lights
         let mut lights : Vec<Box<AbstractLight + 'static>> = Vec::new();
-        let mut material_to_light = SmallIntMap::new();
+        let mut material_to_light = VecMap::new();
         if light_ceiling && !light_box {
             let mut l = box AreaLight::new(cb[2], cb[6], cb[7]);
             l.intensity = vec3s(0.95492965);
