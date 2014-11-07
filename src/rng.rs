@@ -1,4 +1,7 @@
-use std::rand::{Rng, SeedableRng};
+use std::rand::SeedableRng;
+use std::rand::Rng as StdRng;
+
+pub type Rng = self::XorShift128Plus;
 
 /// This is the XorShift128+ generator.
 /// Based on the C code provided at http://xorshift.di.unimi.it/
@@ -17,7 +20,7 @@ impl XorShift128Plus {
     }
 }
 
-impl Rng for XorShift128Plus {
+impl StdRng for XorShift128Plus {
     #[inline]
     fn next_u32(&mut self) -> u32 {
         self.next_u64() as u32

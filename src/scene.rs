@@ -1,9 +1,9 @@
 use std::collections::VecMap;
-use math::{Vec2i, vec2, vec3, vec3s, INV_PI};
+use math::{sqr, Vec2i, vec2, vec3, vec3s, INV_PI};
 use camera::Camera;
 use materials::Material;
-use geometry::{GeometryList, Triangle, Sphere};
-use lights::{AbstractLight, AreaLight, DirectionalLight, PointLight, BackgroundLight};
+use geometry::{AbstractGeometry, GeometryList, Triangle, Sphere};
+use lights::{SceneSphere, AbstractLight, AreaLight, DirectionalLight, PointLight, BackgroundLight};
 
 bitflags! {
     flags BoxMask: u32 {
@@ -27,11 +27,11 @@ bitflags! {
 
 pub struct Scene {
     geometry: GeometryList,
-    camera: Camera,
+    pub camera: Camera,
     materials: Vec<Material>,
     lights: Vec<Box<AbstractLight + 'static>>,
     material_to_light: VecMap<uint>,
-    scene_sphere: (), // TODO
+    scene_sphere: SceneSphere,
     background: Option<uint>,
 
     pub scene_name: String,
@@ -39,7 +39,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    fn load_cornell_box(resolution: Vec2i, mut box_mask: BoxMask) -> Scene {
+    pub fn load_cornell_box(resolution: Vec2i, mut box_mask: BoxMask) -> Scene {
         let (name, acronym) = Scene::get_scene_name(box_mask);
 
         if (box_mask & BOTH_LARGE_SPHERES) == BOTH_LARGE_SPHERES {
@@ -246,7 +246,6 @@ impl Scene {
             lights.push(l);
         }
 
-        // TODO
         Scene {
             geometry: geometry_list,
             camera: Camera::new(
@@ -257,11 +256,24 @@ impl Scene {
             materials: materials,
             lights: lights,
             material_to_light: material_to_light,
-            scene_sphere: (),
+            scene_sphere: SceneSphere {
+                scene_center: vec3s(0.0), scene_radius: 0.0, inv_scene_radius_sqr: 0.0 },
             background: background_light,
             scene_name: name,
             scene_acronym: acronym,
         }
+    }
+
+    pub fn build_scene_sphere(&mut self) {
+        let mut bbox_min = vec3s(1e36);
+        let mut bbox_max = vec3s(-1e36);
+        self.geometry.grow_bbox(&mut bbox_min, &mut bbox_max);
+
+        let radius2 = (bbox_max - bbox_min).length_sqr();
+
+        self.scene_sphere.scene_center = (bbox_max + bbox_min) * vec3s(0.5);
+        self.scene_sphere.scene_radius = radius2.sqrt() * 0.5;
+        self.scene_sphere.inv_scene_radius_sqr = 1.0 / sqr(self.scene_sphere.scene_radius);
     }
 
     fn get_scene_name(_box_mask: BoxMask) -> (String, String) {

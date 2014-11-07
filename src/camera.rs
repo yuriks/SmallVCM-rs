@@ -3,7 +3,7 @@ use math::{Vec3f, Vec2f, Mat4f, vec3, PI};
 pub struct Camera {
     position: Vec3f,
     forward: Vec3f,
-    resolution: Vec2f,
+    pub resolution: Vec2f,
     raster_to_world: Mat4f,
     world_to_raster: Mat4f,
     image_plane_dist: f32,

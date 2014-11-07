@@ -116,7 +116,7 @@ impl<T: Num + PartialOrd + Copy> Vector3<T> {
     }
 
     #[inline]
-    fn length_sqr(self) -> T {
+    pub fn length_sqr(self) -> T {
         self.dot(self)
     }
 

@@ -57,7 +57,7 @@ impl Algorithm {
 
 pub enum RunLimit {
     LimitIterations(u32),
-    LimitTime(f32),
+    LimitTime(f64),
 }
 
 pub struct Config {
@@ -66,11 +66,11 @@ pub struct Config {
     pub run_limit: RunLimit,
     radius_factor: f32,
     radius_alpha: f32,
-    pub framebuffer: Framebuffer,
-    pub num_threads: u32,
-    base_seed: u32,
-    max_path_length: uint,
-    min_path_length: uint,
+    pub framebuffer: Option<Framebuffer>,
+    pub num_threads: uint,
+    pub base_seed: u32,
+    pub max_path_length: u32,
+    pub min_path_length: u32,
     pub output_name: String,
     resolution: Vec2i,
     pub full_report: bool,
@@ -84,7 +84,7 @@ impl Default for Config {
             run_limit: LimitIterations(1),
             radius_factor: 0.003,
             radius_alpha: 0.75,
-            framebuffer: Framebuffer::new(),
+            framebuffer: None,
             num_threads: 0,
             base_seed: 1234,
             max_path_length: 10,
@@ -96,10 +96,11 @@ impl Default for Config {
     }
 }
 
-fn create_render(config: &Config, _seed: u32) -> Box<AbstractRenderer> {
-    let ref _scene = config.scene;
+pub fn create_renderer<'a, 'b>(config: &'a Config, seed: u32) -> Box<AbstractRenderer<'a> + 'a> {
+    let scene = match config.scene { Some(ref x) => x, None => unreachable!() };
 
     match config.algorithm {
+        EyeLight => box ::eyelight::EyeLight::new(scene, seed),
         // TODO
         _ => unimplemented!()
     }
@@ -107,10 +108,10 @@ fn create_render(config: &Config, _seed: u32) -> Box<AbstractRenderer> {
 
 fn get_scene_config(scene_id: uint) -> Option<BoxMask> {
     match scene_id {
-        1 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_SUN),
-        2 => Some(scene::GLOSSY_FLOOR | scene::LARGE_MIRROR_SPHERE | scene::LIGHT_CEILING),
-        3 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_POINT),
-        4 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_BACKGROUND),
+        0 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_SUN),
+        1 => Some(scene::GLOSSY_FLOOR | scene::LARGE_MIRROR_SPHERE | scene::LIGHT_CEILING),
+        2 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_POINT),
+        3 => Some(scene::GLOSSY_FLOOR | scene::BOTH_SMALL_SPHERES  | scene::LIGHT_BACKGROUND),
         _ => None
     }
 }
@@ -157,12 +158,6 @@ pub fn parse_commandline(argv: &[String]) -> Result<Config, String> {
         return Err("".to_string());
     }
 
-    if matches.opt_present("report") {
-        config.full_report = true;
-        // In report mode, the scene and algorithm options are ignored and managed by the reporter.
-        return Ok(config);
-    }
-
     let scene_config = match matches.opt_str("s") {
         Some(scene_num_str) =>
             match from_str::<uint>(scene_num_str[])
@@ -193,13 +188,23 @@ pub fn parse_commandline(argv: &[String]) -> Result<Config, String> {
     }
 
     match matches.opt_str("t") {
-        Some(time_str) => match from_str::<f32>(time_str[]) {
+        Some(time_str) => match from_str::<f64>(time_str[]) {
             Some(time) if time >= 0.0 => config.run_limit = LimitTime(time),
             _ => return Err(format!(
                 "Invalid time \"{}\", please see help (-h).", time_str)),
         },
         None => (),
     }
+
+    if matches.opt_present("report") {
+        config.full_report = true;
+        // In report mode, the scene and algorithm options are ignored and managed by the reporter.
+        return Ok(config);
+    }
+
+    let mut scene = Scene::load_cornell_box(config.resolution, scene_config);
+    scene.build_scene_sphere();
+    config.scene = Some(scene);
 
     config.output_name = match matches.opt_str("o") {
         Some(output_name) => if output_name.len() > 0 {

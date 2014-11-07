@@ -3,13 +3,16 @@
 #![allow(dead_code)]
 
 extern crate getopts;
+extern crate time;
 
-use std::os::set_exit_status;
 use config::{Config, LimitTime, LimitIterations};
+use std::cmp::max;
 use std::io::stdio;
+use std::os::set_exit_status;
 
 mod camera;
 mod config;
+mod eyelight;
 mod frame;
 mod framebuffer;
 mod geometry;
@@ -22,8 +25,73 @@ mod rng;
 mod scene;
 mod utils;
 
-fn render(_config: &Config) -> (f32, int) {
-    unimplemented!() // TODO
+fn render(config: &mut Config) -> (f64, u32) {
+    use renderer::AbstractRenderer;
+    use renderer::RendererBase;
+    // TODO omp_set_num_threads(config.num_threads);
+
+    let mut renderers: Vec<Box<AbstractRenderer>> = Vec::with_capacity(config.num_threads as uint);
+
+    for i in range(0, config.num_threads) {
+        let mut renderer : Box<AbstractRenderer> = config::create_renderer(config, config.base_seed + i as u32);
+        {
+            let render_base : &mut RendererBase = renderer.base_mut();
+            render_base.max_path_length = config.max_path_length;
+            render_base.min_path_length = config.min_path_length;
+        }
+        renderers.push(renderer);
+    }
+
+    let start_time = time::precise_time_s();
+    let mut iter = 0;
+
+    match config.run_limit {
+        LimitTime(max_time) => {
+            // TODO #pragma omp parallel
+            while time::precise_time_s() < start_time + max_time {
+                let thread_id = 0; // TODO omp_get_thread_num();
+                renderers[thread_id].run_iteration(iter);
+                // TODO #pragma omp atomic
+                iter += 1;
+            }
+        },
+        LimitIterations(iterations) => {
+            // TODO #pragma omp parallel for
+            for iter in range(0, iterations) {
+                let thread_id = 0; // TODO omp_get_thread_num();
+                renderers[thread_id].run_iteration(iter);
+            }
+            iter = iterations;
+        },
+    }
+
+    let end_time = time::precise_time_s();
+
+    let mut used_renderers = 0u;
+
+    for renderer in renderers.iter_mut() {
+        if !renderer.base().was_used() {
+            continue;
+        }
+
+        let fb = match config.framebuffer.take() {
+            None => Some(renderer.base().get_framebuffer()),
+            Some(mut framebuffer) => {
+                framebuffer.add(&renderer.base().get_framebuffer());
+                Some(framebuffer)
+            },
+        };
+        config.framebuffer = fb;
+
+        used_renderers += 1;
+    }
+
+    match config.framebuffer {
+        Some(ref mut framebuffer) => framebuffer.scale(1.0 / used_renderers as f32),
+        None => unreachable!(),
+    }
+
+    (end_time - start_time, iter + 1)
 }
 
 fn full_report(_config: &Config) {
@@ -43,8 +111,7 @@ fn main() {
     };
 
     if config.num_threads <= 0 {
-        config.num_threads = 1;
-        // TODO config.num_threads = max(1, omp_get_num_procs());
+        config.num_threads = max(1, std::os::num_cpus());
     }
 
     if config.full_report {
@@ -66,14 +133,14 @@ fn main() {
 
     print!("Running: {}... ", config.algorithm.get_name());
     stdio::flush();
-    let (time, _) = render(&config);
+    let (time, _) = render(&mut config);
     println!("done in {:.2} s", time);
 
     let extension = config.output_name[].rsplitn(1, '.').next();
 
     match extension {
-        Some("bmp") => config.framebuffer.save_bmp(config.output_name[], 2.2),
-        Some("hdr") => config.framebuffer.save_hdr(config.output_name[]),
+        Some("bmp") => config.framebuffer.unwrap().save_bmp(config.output_name[], 2.2),
+        Some("hdr") => config.framebuffer.unwrap().save_hdr(config.output_name[]),
         Some(other_ext) => {
             println!("Used unknown extension {}", other_ext);
             set_exit_status(1);

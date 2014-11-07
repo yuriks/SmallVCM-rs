@@ -2,9 +2,9 @@ use math::{Vec3f, vec3, vec3s};
 use frame::Frame;
 
 pub struct SceneSphere {
-    scene_center: Vec3f,
-    scene_radius: f32,
-    inv_scene_radius_sqr: f32,
+    pub scene_center: Vec3f,
+    pub scene_radius: f32,
+    pub inv_scene_radius_sqr: f32,
 }
 
 pub trait AbstractLight {
