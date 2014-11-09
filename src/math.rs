@@ -12,8 +12,10 @@ macro_rules! impl_Vector_op(
         impl<T: Num> $Trait<$Self<T>, $Self<T>> for $Self<T> {
             #[inline]
             fn $func(&self, o: &$Self<T>) -> $Self<T> {
+                // TODO: Workaround for Rust bug #18775
+                let me = self;
                 $Self {
-                    $($field: self.$field.$func(&o.$field)),+
+                    $($field: me.$field.$func(&o.$field)),+
                 }
             }
         }
@@ -138,7 +140,7 @@ impl<T: Float> Vector3<T> {
 
     #[inline]
     pub fn normalized(&self) -> Vector3<T> {
-        self / Vector3::spread(self.length())
+        *self / Vector3::spread(self.length())
     }
 }
 
