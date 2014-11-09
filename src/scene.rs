@@ -4,6 +4,7 @@ use camera::Camera;
 use materials::Material;
 use geometry::{AbstractGeometry, GeometryList, Triangle, Sphere};
 use lights::{SceneSphere, AbstractLight, AreaLight, DirectionalLight, PointLight, BackgroundLight};
+use ray::{Ray, Isect};
 
 bitflags! {
     flags BoxMask: u32 {
@@ -30,7 +31,7 @@ pub struct Scene {
     pub camera: Camera,
     materials: Vec<Material>,
     lights: Vec<Box<AbstractLight + 'static>>,
-    material_to_light: VecMap<uint>,
+    material_to_light: VecMap<int>,
     scene_sphere: SceneSphere,
     background: Option<uint>,
 
@@ -39,6 +40,17 @@ pub struct Scene {
 }
 
 impl Scene {
+    pub fn intersect(&self, ray: &Ray, result: &mut Isect) -> bool {
+        let hit = self.geometry.intersect(ray, result);
+
+        if hit {
+            let lid = self.material_to_light.get(&(result.mat_id as uint));
+            result.light_id = lid.map_or(-1, |&x| x);
+        }
+
+        hit
+    }
+
     pub fn load_cornell_box(resolution: Vec2i, mut box_mask: BoxMask) -> Scene {
         let (name, acronym) = Scene::get_scene_name(box_mask);
 
@@ -159,14 +171,14 @@ impl Scene {
         let right_wall_center = (cb[1] + cb[5]) * vec3s(0.5) + vec3(0.0, 0.0, small_radius);
         let xlen = right_wall_center.x - left_wall_center.x;
         let left_ball_center  = left_wall_center  + vec3(2.0 * xlen / 7.0, 0.0, 0.0);
-        let right_ball_center = right_wall_center + vec3(2.0 * xlen / 7.0, 0.0, 0.0);
+        let right_ball_center = right_wall_center - vec3(2.0 * xlen / 7.0, 0.0, 0.0);
 
         if box_mask.contains(SMALL_MIRROR_SPHERE) {
             geometry_list.geometry.push(box Sphere::new(left_ball_center, small_radius, 6));
         }
 
         if box_mask.contains(SMALL_GLASS_SPHERE) {
-            geometry_list.geometry.push(box Sphere::new(right_ball_center, small_radius, 7));
+            geometry_list.geometry.push(box Sphere::new(right_ball_center, small_radius, 6));
         }
 
         // Light box at the ceiling

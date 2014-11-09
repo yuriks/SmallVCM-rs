@@ -1,5 +1,6 @@
 use std::rand::SeedableRng;
 use std::rand::Rng as StdRng;
+use math::{Vec2f, vec2, Vec3f, vec3};
 
 pub type Rng = self::XorShift128Plus;
 
@@ -51,4 +52,17 @@ impl SeedableRng<[u64, ..2]> for XorShift128Plus {
             s1: seed[1],
         }
     }
+}
+
+pub trait MathRng : StdRng {
+    fn get_vec2f(&mut self) -> Vec2f {
+        vec2(self.next_f32(), self.next_f32())
+    }
+
+    fn get_vec3f(&mut self) -> Vec3f {
+        vec3(self.next_f32(), self.next_f32(), self.next_f32())
+    }
+}
+
+impl<T: StdRng> MathRng for T {
 }

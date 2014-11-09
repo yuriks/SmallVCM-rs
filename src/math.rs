@@ -1,4 +1,5 @@
 use std::num::Zero;
+use std::fmt::{Show, Formatter, FormatError};
 
 pub const PI : f32 = 3.14159265358979;
 pub const INV_PI : f32 = 1.0 / PI;
@@ -89,6 +90,18 @@ impl<T: Num + Copy> Vector2<T> {
     }
 }
 
+#[allow(unused_must_use)]
+impl<T: Show> Show for Vector2<T> {
+    fn fmt(&self, formatter: &mut Formatter) -> Result<(), FormatError> {
+        formatter.write_str("(");
+        try!(self.x.fmt(formatter));
+        formatter.write_str(", ");
+        try!(self.y.fmt(formatter));
+        formatter.write_str(")");
+        Ok(())
+    }
+}
+
 impl<T: Num + PartialOrd + Copy> Vector3<T> {
     #[inline]
     fn new(x: T, y: T, z: T) -> Vector3<T> {
@@ -114,7 +127,7 @@ impl<T: Num + PartialOrd + Copy> Vector3<T> {
 
     #[inline]
     pub fn dot(&self, o: Vector3<T>) -> T {
-        (self.x * o.x) + (self.y * o.y)
+        (self.x * o.x) + (self.y * o.y) + (self.z * o.z)
     }
 
     #[inline]
@@ -140,7 +153,9 @@ impl<T: Float> Vector3<T> {
 
     #[inline]
     pub fn normalized(&self) -> Vector3<T> {
-        *self / Vector3::spread(self.length())
+        let len_sqr = self.dot(*self);
+        let len = len_sqr.sqrt();
+        *self / Vector3::spread(len)
     }
 }
 
@@ -153,6 +168,20 @@ impl<T: Num + PartialOrd + Copy + Zero> Zero for Vector3<T> {
     #[inline]
     fn is_zero(&self) -> bool {
         self.x == Zero::zero() && self.y == Zero::zero() && self.z == Zero::zero()
+    }
+}
+
+#[allow(unused_must_use)]
+impl<T: Show> Show for Vector3<T> {
+    fn fmt(&self, formatter: &mut Formatter) -> Result<(), FormatError> {
+        formatter.write_str("(");
+        try!(self.x.fmt(formatter));
+        formatter.write_str(", ");
+        try!(self.y.fmt(formatter));
+        formatter.write_str(", ");
+        try!(self.z.fmt(formatter));
+        formatter.write_str(")");
+        Ok(())
     }
 }
 
@@ -190,7 +219,7 @@ impl Mat4f {
         res
     }
 
-    fn transform_point(&self, vec: &Vec3f) -> Vec3f {
+    pub fn transform_point(&self, vec: &Vec3f) -> Vec3f {
         let mut w = self[(3, 3)];
         for c in range(0, 3) {
             w += self[(3, c)] * vec[c];
