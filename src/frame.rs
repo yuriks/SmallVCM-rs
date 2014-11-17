@@ -1,4 +1,5 @@
 use math::{Vec3f, vec3, vec3s};
+use std::num::Float;
 
 pub struct Frame {
     pub x: Vec3f,

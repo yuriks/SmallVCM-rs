@@ -1,5 +1,6 @@
 use ray::{Ray, Isect};
 use math::{Vec3f, vec3s};
+use std::num::{Float, FloatMath};
 
 pub trait AbstractGeometry {
     fn intersect(&self, ray: &Ray, result: &mut Isect) -> bool;

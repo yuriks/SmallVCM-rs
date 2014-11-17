@@ -1,5 +1,24 @@
-use std::num::Zero;
+use std::num::{Float, FloatMath};
 use std::fmt::{Show, Formatter, FormatError};
+
+trait Num :
+    Add<Self, Self> +
+    Sub<Self, Self> +
+    Mul<Self, Self> +
+    Div<Self, Self> +
+    Neg<Self> +
+    PartialOrd {
+}
+
+macro_rules! impl_Num(
+    ($Self:ident) => (
+        impl Num for $Self {
+        }
+    )
+)
+
+impl_Num!(i32)
+impl_Num!(f32)
 
 pub const PI : f32 = 3.14159265358979;
 pub const INV_PI : f32 = 1.0 / PI;
@@ -69,8 +88,8 @@ pub fn vec2<T: Num + Copy>(x: T, y: T) -> Vector2<T> { Vector2::new(x, y) }
 pub fn vec2s<T: Num + Copy>(a: T) -> Vector2<T> { Vector2::spread(a) }
 pub type Vec3f = Vector3<f32>;
 pub type Vec3i = Vector3<i32>;
-pub fn vec3<T: Num + PartialOrd + Copy>(x: T, y: T, z: T) -> Vector3<T> { Vector3::new(x, y, z) }
-pub fn vec3s<T: Num + PartialOrd + Copy>(a: T) -> Vector3<T> { Vector3::spread(a) }
+pub fn vec3<T: Num + Copy>(x: T, y: T, z: T) -> Vector3<T> { Vector3::new(x, y, z) }
+pub fn vec3s<T: Num + Copy>(a: T) -> Vector3<T> { Vector3::spread(a) }
 
 impl<T: Num + Copy> Vector2<T> {
     #[inline]
@@ -102,7 +121,7 @@ impl<T: Show> Show for Vector2<T> {
     }
 }
 
-impl<T: Num + PartialOrd + Copy> Vector3<T> {
+impl<T: Num + Copy> Vector3<T> {
     #[inline]
     fn new(x: T, y: T, z: T) -> Vector3<T> {
         Vector3 { x: x, y: y, z: z }
@@ -145,7 +164,7 @@ impl<T: Num + PartialOrd + Copy> Vector3<T> {
     }
 }
 
-impl<T: Float> Vector3<T> {
+impl<T: Num + Float> Vector3<T> {
     #[inline]
     pub fn length(&self) -> T {
         self.length_sqr().sqrt()
@@ -156,18 +175,6 @@ impl<T: Float> Vector3<T> {
         let len_sqr = self.dot(*self);
         let len = len_sqr.sqrt();
         *self / Vector3::spread(len)
-    }
-}
-
-impl<T: Num + PartialOrd + Copy + Zero> Zero for Vector3<T> {
-    #[inline]
-    fn zero() -> Vector3<T> {
-        Vector3::spread(Zero::zero())
-    }
-
-    #[inline]
-    fn is_zero(&self) -> bool {
-        self.x == Zero::zero() && self.y == Zero::zero() && self.z == Zero::zero()
     }
 }
 
@@ -210,7 +217,7 @@ impl Mat4f {
     }
 
     fn transform_vector(&self, vec: &Vec3f) -> Vec3f {
-        let mut res : Vec3f = Zero::zero();
+        let mut res : Vec3f = vec3s(0.0);
         for r in range(0, 3) {
             for c in range(0, 3) {
                 res[r] += vec[c] * self[(r, c)]
@@ -227,7 +234,7 @@ impl Mat4f {
 
         let inv_w = 1.0 / w;
 
-        let mut res : Vec3f = Zero::zero();
+        let mut res : Vec3f = vec3s(0.0);
         for r in range(0, 3) {
             res[r] = self[(r, 3)];
             for c in range(0, 3) {

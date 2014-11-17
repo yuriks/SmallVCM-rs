@@ -90,7 +90,8 @@ impl Default for Config {
             max_path_length: 10,
             min_path_length: 0,
             output_name: "".to_string(),
-            resolution: vec2(512, 512),
+            // Explicit literal type is a workaround for rust#18954
+            resolution: vec2(512i32, 512),
             full_report: false,
         }
     }

@@ -1,4 +1,20 @@
 [root]
 name = "SmallVCM-rs"
 version = "0.0.1"
+dependencies = [
+ "time 0.0.1 (git+http://github.com/rust-lang/time)",
+]
+
+[[package]]
+name = "gcc"
+version = "0.0.1"
+source = "git+https://github.com/alexcrichton/gcc-rs#f25b3ba9c40303781189cc137fb98fffe5b56de7"
+
+[[package]]
+name = "time"
+version = "0.0.1"
+source = "git+http://github.com/rust-lang/time#f8c6b514021f0eef55267220b9435cb221d7d6c3"
+dependencies = [
+ "gcc 0.0.1 (git+https://github.com/alexcrichton/gcc-rs)",
+]
 

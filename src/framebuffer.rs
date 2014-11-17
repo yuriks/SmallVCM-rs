@@ -2,6 +2,7 @@ use math::{Vec2f, Vec3f, vec2, vec3s};
 use utils::luminance;
 use std::path::Path;
 use std::io::{File, IoResult};
+use std::num::{Float, FloatMath};
 
 #[deriving(Clone)]
 pub struct Framebuffer {

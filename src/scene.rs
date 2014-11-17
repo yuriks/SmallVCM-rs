@@ -1,4 +1,5 @@
 use std::collections::VecMap;
+use std::num::Float;
 use math::{sqr, Vec2i, vec2, vec3, vec3s, INV_PI};
 use camera::Camera;
 use materials::Material;

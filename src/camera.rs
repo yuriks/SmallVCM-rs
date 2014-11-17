@@ -1,3 +1,4 @@
+use std::num::FloatMath;
 use math::{Vec3f, Vec2f, Mat4f, vec3, PI};
 use ray::Ray;
 
