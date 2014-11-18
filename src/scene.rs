@@ -52,6 +52,14 @@ impl Scene {
         hit
     }
 
+    pub fn get_light_count(&self) -> uint {
+        self.lights.len()
+    }
+
+    pub fn get_background(&self) -> Option<&AbstractLight> {
+        self.background.map(|i| &*self.lights[i])
+    }
+
     pub fn load_cornell_box(resolution: Vec2i, mut box_mask: BoxMask) -> Scene {
         let (name, acronym) = Scene::get_scene_name(box_mask);
 

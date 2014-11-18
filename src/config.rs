@@ -101,7 +101,8 @@ pub fn create_renderer<'a, 'b>(config: &'a Config, seed: u32) -> Box<AbstractRen
     let scene = match config.scene { Some(ref x) => x, None => unreachable!() };
 
     match config.algorithm {
-        EyeLight => box ::eyelight::EyeLight::new(scene, seed),
+        EyeLight => box ::eyelight::EyeLight::new(scene, seed) as Box<AbstractRenderer>,
+        PathTracing => box ::pathtracer::PathTracer::new(scene, seed) as Box<AbstractRenderer>,
         // TODO
         _ => unimplemented!()
     }

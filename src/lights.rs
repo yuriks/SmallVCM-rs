@@ -1,5 +1,7 @@
 use math::{Vec3f, vec3, vec3s};
 use frame::Frame;
+use utils::{cos_hemisphere_pdf_w, concentric_disc_pdf_a, uniform_sphere_pdf_w};
+use std::num::FloatMath;
 
 pub struct SceneSphere {
     pub scene_center: Vec3f,
@@ -8,7 +10,10 @@ pub struct SceneSphere {
 }
 
 pub trait AbstractLight {
-    // TODO
+    fn get_radiance(&self, _: &SceneSphere, ray_direction: &Vec3f, hit_point: &Vec3f,
+                    direct_pdf_a: Option<&mut f32>, emission_pdf_w: Option<&mut f32>) -> Vec3f;
+    fn is_finite() -> bool;
+    fn is_delta() -> bool;
 }
 
 pub struct AreaLight {
@@ -38,7 +43,28 @@ impl AreaLight {
 }
 
 impl AbstractLight for AreaLight {
-    // TODO
+    fn get_radiance(&self, _: &SceneSphere, ray_direction: &Vec3f, _hit_point: &Vec3f,
+                    direct_pdf_a: Option<&mut f32>, emission_pdf_w: Option<&mut f32>) -> Vec3f {
+        let cos_out_l = self.frame.normal().dot(-*ray_direction).max(0.0);
+
+        if cos_out_l == 0.0 {
+            return vec3s(0.0);
+        }
+
+        if let Some(direct_pdf_a) = direct_pdf_a {
+            *direct_pdf_a = self.inv_area;
+        }
+
+        if let Some(emission_pdf_w) = emission_pdf_w {
+            *emission_pdf_w = cos_hemisphere_pdf_w(&self.frame.normal(), -*ray_direction);
+            *emission_pdf_w *= self.inv_area;
+        }
+
+        self.intensity
+    }
+
+    fn is_finite() -> bool { true }
+    fn is_delta() -> bool { false }
 }
 
 pub struct DirectionalLight {
@@ -56,7 +82,13 @@ impl DirectionalLight {
 }
 
 impl AbstractLight for DirectionalLight {
-    // TODO
+    fn get_radiance(&self, _: &SceneSphere, _ray_direction: &Vec3f, _hit_point: &Vec3f,
+                    _direct_pdf_a: Option<&mut f32>, _emission_pdf_w: Option<&mut f32>) -> Vec3f {
+        vec3s(0.0)
+    }
+
+    fn is_finite() -> bool { false }
+    fn is_delta() -> bool { true }
 }
 
 pub struct PointLight {
@@ -74,7 +106,13 @@ impl PointLight {
 }
 
 impl AbstractLight for PointLight {
-    // TODO
+    fn get_radiance(&self, _: &SceneSphere, _ray_direction: &Vec3f, _hit_point: &Vec3f,
+                    _direct_pdf_a: Option<&mut f32>, _emission_pdf_w: Option<&mut f32>) -> Vec3f {
+        vec3s(0.0)
+    }
+
+    fn is_finite() -> bool { true }
+    fn is_delta() -> bool { true }
 }
 
 pub struct BackgroundLight {
@@ -92,5 +130,24 @@ impl BackgroundLight {
 }
 
 impl AbstractLight for BackgroundLight {
-    // TODO
+    fn get_radiance(&self, scene_sphere: &SceneSphere, _ray_direction: &Vec3f, _hit_point: &Vec3f,
+                    direct_pdf_a: Option<&mut f32>, emission_pdf_w: Option<&mut f32>) -> Vec3f {
+        let direct_pdf = uniform_sphere_pdf_w();
+        let radiance = self.background_color * vec3s(self.scale);
+
+        let position_pdf = concentric_disc_pdf_a() * scene_sphere.inv_scene_radius_sqr;
+
+        if let Some(direct_pdf_a) = direct_pdf_a {
+            *direct_pdf_a = direct_pdf;
+        }
+
+        if let Some(emission_pdf_w) = emission_pdf_w {
+            *emission_pdf_w = direct_pdf * position_pdf;
+        }
+
+        radiance
+    }
+
+    fn is_finite() -> bool { false }
+    fn is_delta() -> bool { false }
 }

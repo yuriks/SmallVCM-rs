@@ -1,5 +1,6 @@
 #![feature(macro_rules)]
 #![feature(slicing_syntax)]
+#![feature(if_let)]
 #![allow(dead_code)]
 
 extern crate getopts;
@@ -20,6 +21,7 @@ mod geometry;
 mod lights;
 mod materials;
 mod math;
+mod pathtracer;
 mod ray;
 mod renderer;
 mod rng;
