@@ -56,7 +56,7 @@ impl Algorithm {
 }
 
 pub enum RunLimit {
-    Iterations(u32),
+    Iterations(uint),
     Time(f64),
 }
 
@@ -97,7 +97,7 @@ impl Default for Config {
     }
 }
 
-pub fn create_renderer<'a, 'b>(config: &'a Config, seed: u32) -> Box<AbstractRenderer<'a> + 'a> {
+pub fn create_renderer<'a, 'b>(config: &'a Config, seed: u32) -> Box<AbstractRenderer<'a> + Sync + 'a> {
     let scene = match config.scene { Some(ref x) => x, None => unreachable!() };
 
     match config.algorithm {
@@ -180,7 +180,7 @@ pub fn parse_commandline(argv: &[String]) -> Result<Config, String> {
     }
 
     match matches.opt_str("i") {
-        Some(iterations_str) => match from_str::<u32>(iterations_str[]) {
+        Some(iterations_str) => match from_str::<uint>(iterations_str[]) {
             Some(iterations) if iterations >= 1 =>
                 config.run_limit = RunLimit::Iterations(iterations),
             _ => return Err(format!(

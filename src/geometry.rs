@@ -13,7 +13,7 @@ pub trait AbstractGeometry {
 }
 
 pub struct GeometryList {
-    pub geometry: Vec<Box<AbstractGeometry + 'static>>
+    pub geometry: Vec<Box<AbstractGeometry + Sync + 'static>>
 }
 
 impl GeometryList {

@@ -5,4 +5,8 @@ version = "0.0.1"
 authors = ["Yuri Kunde Schlesner <yuriks@yuriks.net>"]
 
 [dependencies.time]
-git = "http://github.com/rust-lang/time"
+git = "https://github.com/rust-lang/time"
+
+[dependencies.rayon]
+git = "https://github.com/yuriks/rayon.git"
+rev = "update"

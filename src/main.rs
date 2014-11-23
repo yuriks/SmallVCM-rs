@@ -4,12 +4,15 @@
 
 extern crate getopts;
 extern crate time;
+extern crate rayon;
 
 use config::{Config, RunLimit};
 use std::cmp::max;
 use std::io::stdio;
 use std::os::set_exit_status;
 use std::path::Path;
+use std::iter::range_step;
+use std::sync::atomic::{Ordering, AtomicUint};
 
 mod camera;
 mod config;
@@ -26,12 +29,11 @@ mod rng;
 mod scene;
 mod utils;
 
-fn render(config: &mut Config) -> (f64, u32) {
+fn render(config: &mut Config) -> (f64, uint) {
     use renderer::AbstractRenderer;
-    // TODO omp_set_num_threads(config.num_threads);
 
     let (framebuffer, result) = {
-        let mut renderers = Vec::with_capacity(config.num_threads as uint);
+        let mut renderers : Vec<Box<AbstractRenderer + Sync>> = Vec::with_capacity(config.num_threads as uint);
 
         for i in range(0, config.num_threads) {
             let mut renderer = config::create_renderer(config, config.base_seed + i as u32);
@@ -44,27 +46,41 @@ fn render(config: &mut Config) -> (f64, u32) {
         }
 
         let start_time = time::precise_time_s();
-        let mut iter = 0;
 
-        match config.run_limit {
+        let iter = match config.run_limit {
             RunLimit::Time(max_time) => {
-                // TODO #pragma omp parallel
-                while time::precise_time_s() < start_time + max_time {
-                    let thread_id = 0; // TODO omp_get_thread_num();
-                    renderers[thread_id].run_iteration(iter);
-                    // TODO #pragma omp atomic
-                    iter += 1;
+                let mut join = rayon::Section::new();
+
+                let iter = AtomicUint::new(0);
+
+                for renderer in renderers.iter_mut() {
+                    let renderer = renderer;
+                    join.fork(&mut || {
+                        while time::precise_time_s() < start_time + max_time {
+                            let i = iter.fetch_add(1, Ordering::Release);
+                            renderer.run_iteration(i as u32);
+                        }
+                    });
                 }
+
+                join.sync();
+                iter.load(Ordering::Acquire)
             },
             RunLimit::Iterations(iterations) => {
-                // TODO #pragma omp parallel for
-                for iter in range(0, iterations) {
-                    let thread_id = 0; // TODO omp_get_thread_num();
-                    renderers[thread_id].run_iteration(iter);
+                let mut join = rayon::Section::new();
+
+                let num_renderers = renderers.len();
+                for (thread_id, renderer) in renderers.iter_mut().enumerate() {
+                    join.fork(&mut || {
+                        for i in range_step(thread_id, iterations, num_renderers) {
+                            renderer.run_iteration(i as u32);
+                        }
+                    });
                 }
-                iter = iterations;
+
+                iterations
             },
-        }
+        };
 
         let end_time = time::precise_time_s();
 
@@ -91,7 +107,7 @@ fn render(config: &mut Config) -> (f64, u32) {
             Some(ref mut framebuffer) => framebuffer.scale(1.0 / used_renderers as f32),
             None => unreachable!(),
         }
-        (framebuffer, (end_time - start_time, iter + 1))
+        (framebuffer, (end_time - start_time, iter))
     };
 
     config.framebuffer = framebuffer;
@@ -138,8 +154,8 @@ fn main() {
 
     print!("Running: {}... ", config.algorithm.get_name());
     stdio::flush();
-    let (time, _) = render(&mut config);
-    println!("done in {:.2} s", time);
+    let (time, iters) = render(&mut config);
+    println!("done {} iterations in {:.2} s", iters, time);
 
     let extension = config.output_name[].rsplitn(1, '.').next();
     let path = Path::new(config.output_name[]);

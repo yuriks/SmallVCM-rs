@@ -31,7 +31,7 @@ pub struct Scene {
     geometry: GeometryList,
     pub camera: Camera,
     materials: Vec<Material>,
-    lights: Vec<Box<AbstractLight + 'static>>,
+    lights: Vec<Box<AbstractLight + Sync + 'static>>,
     material_to_light: VecMap<int>,
     scene_sphere: SceneSphere,
     background: Option<uint>,
@@ -215,7 +215,7 @@ impl Scene {
         }
 
         // Lights
-        let mut lights : Vec<Box<AbstractLight + 'static>> = Vec::new();
+        let mut lights : Vec<Box<AbstractLight + Sync + 'static>> = Vec::new();
         let mut material_to_light = VecMap::new();
         if light_ceiling && !light_box {
             let mut l = box AreaLight::new(cb[2], cb[6], cb[7]);
