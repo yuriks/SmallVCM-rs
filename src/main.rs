@@ -5,7 +5,7 @@
 extern crate getopts;
 extern crate time;
 
-use config::{Config, LimitTime, LimitIterations};
+use config::{Config, RunLimit};
 use std::cmp::max;
 use std::io::stdio;
 use std::os::set_exit_status;
@@ -47,7 +47,7 @@ fn render(config: &mut Config) -> (f64, u32) {
         let mut iter = 0;
 
         match config.run_limit {
-            LimitTime(max_time) => {
+            RunLimit::Time(max_time) => {
                 // TODO #pragma omp parallel
                 while time::precise_time_s() < start_time + max_time {
                     let thread_id = 0; // TODO omp_get_thread_num();
@@ -56,7 +56,7 @@ fn render(config: &mut Config) -> (f64, u32) {
                     iter += 1;
                 }
             },
-            LimitIterations(iterations) => {
+            RunLimit::Iterations(iterations) => {
                 // TODO #pragma omp parallel for
                 for iter in range(0, iterations) {
                     let thread_id = 0; // TODO omp_get_thread_num();
@@ -132,8 +132,8 @@ fn main() {
 
     println!("Scene:   {}\n", config.scene.as_ref().unwrap().scene_name);
     match config.run_limit {
-        LimitTime(t) => println!("Target:  {} seconds render time", t),
-        LimitIterations(n) => println!("Target:  {} iteration(s)", n),
+        RunLimit::Time(t) => println!("Target:  {} seconds render time", t),
+        RunLimit::Iterations(n) => println!("Target:  {} iteration(s)", n),
     }
 
     print!("Running: {}... ", config.algorithm.get_name());

@@ -112,7 +112,7 @@ impl Framebuffer {
                     gamma_bgr[2].min(255.0).max(0.0) as u8,
                 ];
 
-                try!(bmp.write(bgrb));
+                try!(bmp.write(bgrb[]));
             }
         }
 

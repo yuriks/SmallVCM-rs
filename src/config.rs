@@ -19,45 +19,45 @@ enum Algorithm {
 impl Algorithm {
     pub fn get_name(self) -> &'static str {
         match self {
-            EyeLight => "eye light",
-            PathTracing => "path tracing",
-            LightTracing => "light tracing",
-            ProgressivePhotonMapping => "progressive photon mapping",
-            BidirectionalPhotonMapping => "bidirectional photon mapping",
-            BidirectionalPathTracing => "bidirectional path tracing",
-            VertexConnectionMerging => "vertex connection and merging",
+            Algorithm::EyeLight => "eye light",
+            Algorithm::PathTracing => "path tracing",
+            Algorithm::LightTracing => "light tracing",
+            Algorithm::ProgressivePhotonMapping => "progressive photon mapping",
+            Algorithm::BidirectionalPhotonMapping => "bidirectional photon mapping",
+            Algorithm::BidirectionalPathTracing => "bidirectional path tracing",
+            Algorithm::VertexConnectionMerging => "vertex connection and merging",
         }
     }
 
     fn get_acronym(self) -> &'static str {
         match self {
-            EyeLight => "el",
-            PathTracing => "pt",
-            LightTracing => "lt",
-            ProgressivePhotonMapping => "ppm",
-            BidirectionalPhotonMapping => "bpm",
-            BidirectionalPathTracing => "bpt",
-            VertexConnectionMerging => "vcm",
+            Algorithm::EyeLight => "el",
+            Algorithm::PathTracing => "pt",
+            Algorithm::LightTracing => "lt",
+            Algorithm::ProgressivePhotonMapping => "ppm",
+            Algorithm::BidirectionalPhotonMapping => "bpm",
+            Algorithm::BidirectionalPathTracing => "bpt",
+            Algorithm::VertexConnectionMerging => "vcm",
         }
     }
 
     fn from_acronym(s: &str) -> Option<Algorithm> {
         Some(match s {
-            "el" => EyeLight,
-            "pt" => PathTracing,
-            "lt" => LightTracing,
-            "ppm" => ProgressivePhotonMapping,
-            "bpm" => BidirectionalPhotonMapping,
-            "bpt" => BidirectionalPathTracing,
-            "vcm" => VertexConnectionMerging,
+            "el"  => Algorithm::EyeLight,
+            "pt"  => Algorithm::PathTracing,
+            "lt"  => Algorithm::LightTracing,
+            "ppm" => Algorithm::ProgressivePhotonMapping,
+            "bpm" => Algorithm::BidirectionalPhotonMapping,
+            "bpt" => Algorithm::BidirectionalPathTracing,
+            "vcm" => Algorithm::VertexConnectionMerging,
             _ => return None,
         })
     }
 }
 
 pub enum RunLimit {
-    LimitIterations(u32),
-    LimitTime(f64),
+    Iterations(u32),
+    Time(f64),
 }
 
 pub struct Config {
@@ -80,8 +80,8 @@ impl Default for Config {
     fn default() -> Config {
         Config {
             scene: None,
-            algorithm: VertexConnectionMerging,
-            run_limit: LimitIterations(1),
+            algorithm: Algorithm::VertexConnectionMerging,
+            run_limit: RunLimit::Iterations(1),
             radius_factor: 0.003,
             radius_alpha: 0.75,
             framebuffer: None,
@@ -101,7 +101,7 @@ pub fn create_renderer<'a, 'b>(config: &'a Config, seed: u32) -> Box<AbstractRen
     let scene = match config.scene { Some(ref x) => x, None => unreachable!() };
 
     match config.algorithm {
-        EyeLight => box ::eyelight::EyeLight::new(scene, seed),
+        Algorithm::EyeLight => box ::eyelight::EyeLight::new(scene, seed),
         // TODO
         _ => unimplemented!()
     }
@@ -152,7 +152,7 @@ pub fn parse_commandline(argv: &[String]) -> Result<Config, String> {
         optopt("t", "", "Number of seconds to run the algorithm for.", "seconds"),
         optopt("o", "", "User specified output name, with extension .bmp or .hdr.", "output_name"),
     ];
-    let matches = getopts(argv, opts).unwrap();
+    let matches = getopts(argv, opts[]).unwrap();
 
     if matches.opt_present("h") {
         print_help(argv);
@@ -181,7 +181,8 @@ pub fn parse_commandline(argv: &[String]) -> Result<Config, String> {
 
     match matches.opt_str("i") {
         Some(iterations_str) => match from_str::<u32>(iterations_str[]) {
-            Some(iterations) if iterations >= 1 => config.run_limit = LimitIterations(iterations),
+            Some(iterations) if iterations >= 1 =>
+                config.run_limit = RunLimit::Iterations(iterations),
             _ => return Err(format!(
                 "Invalid iteration count \"{}\", please see help (-h).", iterations_str)),
         },
@@ -190,7 +191,7 @@ pub fn parse_commandline(argv: &[String]) -> Result<Config, String> {
 
     match matches.opt_str("t") {
         Some(time_str) => match from_str::<f64>(time_str[]) {
-            Some(time) if time >= 0.0 => config.run_limit = LimitTime(time),
+            Some(time) if time >= 0.0 => config.run_limit = RunLimit::Time(time),
             _ => return Err(format!(
                 "Invalid time \"{}\", please see help (-h).", time_str)),
         },

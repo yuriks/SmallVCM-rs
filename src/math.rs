@@ -1,5 +1,6 @@
 use std::num::{Float, FloatMath};
-use std::fmt::{Show, Formatter, FormatError};
+use std::fmt::{Show, Formatter};
+use std::fmt::Error as FormatError;
 
 trait Num :
     Add<Self, Self> +
