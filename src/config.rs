@@ -135,7 +135,7 @@ fn default_filename(scene_config: BoxMask, scene: &Scene, algorithm: Algorithm) 
 }
 
 fn print_help(_argv: &[String]) {
-    // TODO
+    unimplemented!(); // TODO
 }
 
 pub fn parse_commandline(argv: &[String]) -> Result<Config, String> {

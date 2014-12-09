@@ -33,7 +33,7 @@ fn render(config: &mut Config) -> (f64, uint) {
     use renderer::AbstractRenderer;
 
     let (framebuffer, result) = {
-        let mut renderers : Vec<Box<AbstractRenderer + Sync>> = Vec::with_capacity(config.num_threads as uint);
+        let mut renderers = Vec::with_capacity(config.num_threads as uint);
 
         for i in range(0, config.num_threads) {
             let mut renderer = config::create_renderer(config, config.base_seed + i as u32);
